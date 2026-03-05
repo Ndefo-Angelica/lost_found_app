@@ -4,8 +4,12 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
+      cocoapods: default
     scripts:
+      - name: Set iOS deployment target
+        script: | 
+          sed -i '' 's/platform :ios, .*/platform :ios, '"'"'15.0'"'"'/' ios/Podfile
       - flutter packages pub get
       - flutter build ios --release --no-codesign
     artifacts:
-      - build/ios/ipa/*.ipa
+      - build/ios/iphoneos/*.ipa
