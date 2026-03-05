@@ -12,7 +12,8 @@ workflows:
       - name: Check environment
         script: | 
           echo "📱 Starting iOS build for device"
-          pwd
+          echo "Current directory: $(pwd)"
+          echo "Files in current directory:"
           ls -la
           
       - name: Set iOS deployment target
@@ -20,19 +21,8 @@ workflows:
           if [ -f "ios/Podfile" ]; then
             sed -i '' 's/platform :ios, .*/platform :ios, '"'"'15.0'"'"'/' ios/Podfile
             echo "✅ Updated iOS deployment target to 15.0 in ios/Podfile"
-          elif [ -f "Podfile" ]; then
-            sed -i '' 's/platform :ios, .*/platform :ios, '"'"'15.0'"'"'/' Podfile
-            echo "✅ Updated iOS deployment target to 15.0 in Podfile"
           else
-            echo "⚠️ Podfile not found, creating one..."
-            mkdir -p ios
-            echo "platform :ios, '15.0'" > ios/Podfile
-            echo "target 'Runner' do" >> ios/Podfile
-            echo "  use_frameworks!" >> ios/Podfile
-            echo "  use_modular_headers!" >> ios/Podfile
-            echo "  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))" >> ios/Podfile
-            echo "end" >> ios/Podfile
-            echo "✅ Created Podfile with iOS 15.0"
+            echo "⚠️ ios/Podfile not found, but continuing build..."
           fi
           
       - name: Clean and get packages
@@ -50,19 +40,32 @@ workflows:
         script: | 
           echo "🔨 Building IPA for iPhone..."
           flutter build ipa --release --no-codesign
+          echo "✅ Build command completed"
           
-      - name: Verify build artifacts
+      - name: Find and list artifacts
         script: | 
-          echo "✅ Build completed! Checking artifacts..."
-          ls -la build/ios/ipa/ || echo "No IPA found in build/ios/ipa/"
-          ls -la build/ios/iphoneos/ || echo "No files found in build/ios/iphoneos/"
-          echo "📦 Looking for IPA file..."
+          echo "🔍 Searching for IPA files..."
+          echo "Checking build/ios/ipa/:"
+          ls -la build/ios/ipa/ || echo "No files in build/ios/ipa/"
+          
+          echo "Checking build/ios/iphoneos/:"
+          ls -la build/ios/iphoneos/ || echo "No files in build/ios/iphoneos/"
+          
+          echo "Checking build/ios/archive/:"
+          ls -la build/ios/archive/ || echo "No files in build/ios/archive/"
+          
+          echo "Checking entire build directory:"
+          find build -name "*.ipa" -type f || echo "No IPA files found anywhere"
+          
+          echo "📦 If IPA exists, it will be captured in artifacts"
           
     artifacts:
-      - build/ios/ipa/*.ipa
-      - build/ios/iphoneos/*.ipa
+      - build/ios/ipa/**/*.ipa
+      - build/ios/iphoneos/**/*.ipa
+      - build/**/*.ipa
+      - build/ios/archive/**/*.xcarchive
       
     publishing:
       email:
         recipients:
-          - angelicandefo@example.com
+          - angelicandefo@gmail.com
